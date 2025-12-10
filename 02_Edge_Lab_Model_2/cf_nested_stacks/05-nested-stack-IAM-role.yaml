@@ -1,0 +1,44 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description:
+  AWS CloudFormation template to create an IAM role to enable ec2 and s3 access.
+  There are three resources involved when assigning permissions to an EC2 instance, as follows
+
+  a)“InstanceProfile” – You can’t assign an IAM role directly to the EC2 instance, but you can assign an instance profile, which passes role information to the EC2 instance.
+
+  b)“IAM::Role” – The EC2 instance can assume a role and inherit any permissions from the role, via the instance profile.
+
+  c)“IAM::Policy” – This contains the actual permissions. The policy is associated with the role.
+
+
+
+Resources:
+  EC2S3AccessRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: EC2_S3_access
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      Path: /
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+
+  RootInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: /
+      Roles:
+        - !Ref EC2S3AccessRole
+
+Outputs:
+
+  EC2S3AccessProfile:
+    Description: A reference to the IAM Role to attach to EC2 to access S3
+    Value: !Ref RootInstanceProfile
+
+
+

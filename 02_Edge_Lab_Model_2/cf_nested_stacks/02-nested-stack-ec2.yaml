@@ -1,0 +1,96 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description:
+  AWS CloudFormation template to provision one EC2 instance in ATCPublicSubnet1 in the default Availability Zone.
+
+Parameters:
+  EnvironmentName:
+    Description: An environment name that is prefixed to resource names
+    Type: String
+    Default: ATC-EDGE-LAB-DEMO
+
+  KeyName:
+    Description: Please select a EC2 key name
+    Type: AWS::EC2::KeyPair::KeyName
+    ConstraintDescription: Must be a valid EC2 instance key pair.
+
+  ATCVPC:
+    Description: VPC ID from nested stack vpc
+    Type: String
+
+  PublicSubnet1:
+    Description: Public Subnet Id from nested stack vpc
+    Type: String
+
+  AmiId:
+    Description: Please specify a EC2 AMI ID (optional)
+    Type: "AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>"
+    Default: "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-ebs"
+
+  AdminIPv4Address:
+    Description: Please enter the IP address for the admin (e.g. SSH Access)
+    Type: String
+    Default: 0.0.0.0/0
+    AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
+
+  DefaultInstanceSizeIntheAZ:
+    Description: Provision one EC2 instances in the Availability Zone
+    Type: String
+    Default: "t2.micro"
+    AllowedValues: ['t2.micro', 't3.micro', 't3.small', 'a1.medium', 'a1.large']
+    ConstraintDescription: Must be a valid EC2 instance type.
+
+  EC2S3AccessProfile:
+    Description: InstanceProfile to attach to EC2, to enable the access between EC2 and S3
+    Type: String
+
+# EC2
+Resources:
+  PublicEC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref AmiId
+      KeyName: !Ref KeyName
+      InstanceType: !Ref DefaultInstanceSizeIntheAZ
+      IamInstanceProfile: !Ref EC2S3AccessProfile
+      SubnetId: !Ref PublicSubnet1
+      BlockDeviceMappings:
+        - DeviceName: "/dev/sdm"
+          Ebs:
+            VolumeType: gp2
+            DeleteOnTermination: true
+            VolumeSize: 8
+      SecurityGroupIds:
+        - !Ref ATCBastSecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-AZ-PubSN-Inst-01-Bastion
+        - Key: Description
+          Value: !Sub ${EnvironmentName} Bastion host
+
+# Security Groups
+  ATCBastSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Sub ${EnvironmentName} SG for the Bastion
+      GroupName: !Sub ${EnvironmentName}-ACS-WL-SG-Bastion
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} SG for the Bastion
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref AdminIPv4Address
+          Description: Enable SSH access via port 22
+        - IpProtocol: icmp
+          FromPort: 8
+          ToPort: -1
+          CidrIp: 0.0.0.0/0
+          Description: Ping!
+      VpcId: !Ref ATCVPC
+
+Outputs:
+  ATCBastSecurityGroupId:
+    Description: A reference to the ATCBastSecurityGroup Id
+    Value: !Ref ATCBastSecurityGroup

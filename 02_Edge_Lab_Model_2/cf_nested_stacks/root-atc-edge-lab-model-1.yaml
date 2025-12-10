@@ -1,0 +1,64 @@
+# ATC Edge Lab Model 2 implementation:
+# This is the root stack, to which all the nested stacks belong.
+# Nested Stacks are stored in Amazon S3 bucket named "acs-edge-east-1"
+# Deploying the root stack will provision following AWS resources and you will be billed for them accordingly.
+# One VPC with multiple subnets
+# Compute: One EC2 in Availability Zone
+# ML Compute: One Deep LEearning EC2 in Wavelength zone
+# Carrier Gateway
+# Security Group Rules
+# IAM policies to enable EC2 instance to access AWS S3 bucket
+
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+
+  KeyName:
+    Description: Please select a EC2 key name
+    Type: AWS::EC2::KeyPair::KeyName
+    ConstraintDescription: Must be a valid EC2 instance key pair.
+
+Resources:
+  VPCStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://acs-edge-east-1.s3.amazonaws.com/01-nested-stack-vpc.yaml
+      TimeoutInMinutes: 10
+
+  AZEC2Stack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://acs-edge-east-1.s3.amazonaws.com/02-nested-stack-ec2.yaml
+      TimeoutInMinutes: 10
+      Parameters:
+        KeyName: !Ref KeyName
+        ATCVPC: !GetAtt VPCStack.Outputs.ATCVPC
+        PublicSubnet1: !GetAtt VPCStack.Outputs.PublicSubnet1
+        EC2S3AccessProfile: !GetAtt EC2S3AccessRole.Outputs.EC2S3AccessProfile
+
+  WZEC2Stack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://acs-edge-east-1.s3.amazonaws.com/03-nested-stack-wz-ec2.yaml
+      TimeoutInMinutes: 10
+      Parameters:
+        KeyName: !Ref KeyName
+        ATCVPC: !GetAtt VPCStack.Outputs.ATCVPC
+        WLPublicSubnet1: !GetAtt VPCStack.Outputs.WLPublicSubnet1
+
+  SecurityStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://acs-edge-east-1.s3.amazonaws.com/04-nested-stack-SG.yaml
+      TimeoutInMinutes: 10
+      Parameters:
+        ATCBastSecurityGroupId : !GetAtt AZEC2Stack.Outputs.ATCBastSecurityGroupId
+        ATCMLSecurityGroupId: !GetAtt WZEC2Stack.Outputs.ATCMLSecurityGroupId
+
+
+  EC2S3AccessRole:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://acs-edge-east-1.s3.amazonaws.com/05-nested-stack-IAM-role.yaml
+      TimeoutInMinutes: 10
+

@@ -1,0 +1,167 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description:
+  AWS CloudFormation template to create one VPC with DNS and Public IPs enabled.
+  It will deploy two public subnets in an Availability zone and wavelength zone respectively.
+
+# Take care of all U.S regions if there's a change in the AMI version
+
+Parameters:
+  EnvironmentName:
+    Description: An environment name that is prefixed to resource names
+    Type: String
+    Default: ATC-EDGE-LAB-DEMO
+
+  ATCVpcCIDR:
+    Description: Please enter the IP range (CIDR notation) for the VPC
+    Type: String
+    Default: 10.192.0.0/16
+    AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
+
+  CurrentWavelengthAZ:
+    Description: Please enter the Availability Zone (AZ) for the Wavelength.
+    Type: String
+    Default: us-east-1-wl1-atl-wlz-1
+
+  ATCPublicSubnet1CIDR:
+    Description: Please enter the IP range (CIDR notation) for the public subnet in the VPC
+    Type: String
+    Default: 10.192.6.0/23
+    AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
+
+  # WILL BE ABLE TO USE ONCE THE WAVELENGTH ZONE IS OPTED-IN
+  WlATCPublicSubnet1CIDR:
+    Description: Please enter the IP range (CIDR notation) for the public subnet in the VPC
+    Type: String
+    Default: 10.192.0.0/23
+    AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
+
+Resources:
+  ATCVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref ATCVpcCIDR
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      InstanceTenancy: "default"
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} VPC
+
+  # GW; CAGW can be implemented. Below the line is a sample
+  # Note: VpcId should be the id of the VPC to which the IGW will be attached to!
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} IGW
+
+  CarrierGateway:
+    Type: AWS::EC2::CarrierGateway
+    Properties:
+        VpcId: !Ref ATCVPC
+        Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} CAGW
+
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref ATCVPC
+
+  # Public route for the publicly open VPC
+  PublicRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref AzPublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  # Public route for the publicly open VPC, attached to the Wavelength zone
+  # Please note that the section 'CarrierGatewayId' is not listed in the official AWS CloudFormation. (as of 10/22/2020)
+  WLPublicRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref WLPublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      CarrierGatewayId: !Ref CarrierGateway
+
+  # Subnets
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref ATCVPC
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      CidrBlock: !Ref ATCPublicSubnet1CIDR
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-acs-wl-az-subnet-public-dev
+        - Key: GatewayType
+          Value: Availability Zone
+        - Key: SubnetType
+          Value: DEV
+        - Key: Number
+          Value: "1"
+
+  # MapPublicIpOnLaunch: true doesn't work with the WLZ
+  WLPublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref ATCVPC
+      AvailabilityZone: !Ref CurrentWavelengthAZ
+      CidrBlock: !Ref WlATCPublicSubnet1CIDR
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-acs-wl-wz-subnet-public-dev
+        - Key: GatewayType
+          Value: Wavelength Zone
+        - Key: SubnetType
+          Value: DEV
+        - Key: Number
+          Value: "1"
+
+  # Routetables
+  AzPublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref ATCVPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-az-rt-public
+
+  AzPublicSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref AzPublicRouteTable
+      SubnetId: !Ref PublicSubnet1
+
+  WLPublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref ATCVPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-wz-rt-public
+
+  WLPublicSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref WLPublicRouteTable
+      SubnetId: !Ref WLPublicSubnet1
+
+Outputs:
+
+  ATCVPC:
+    Description: A reference to the created ATC VPC
+    Value: !Ref ATCVPC
+
+  PublicSubnet1:
+    Description: A reference to the ATC DEV public subnet in the 1st Availability Zone
+    Value: !Ref PublicSubnet1
+
+  WLPublicSubnet1:
+    Description: A reference to the ATC DEV public subnet in the 1st Availability Zone (Wavelength Zone)
+    Value: !Ref WLPublicSubnet1

@@ -1,0 +1,82 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description:
+  AWS CloudFormation template to provision one EC2 instance with deep learning AMI in WLATCPublicSubnet1 in the default wavelength Zone.
+
+# Mappings for the Deep learning AMI v.40, Ubuntu 18.04
+# Take care of all U.S regions if there's a change in the AMI version
+Mappings:
+  MLAmiRegionMap:
+    us-east-1:
+      HVM64: ami-072519eedc1730252
+    us-east-2:
+      HVM64: ami-09f77b37a0d32243a
+    us-west-1:
+      HVM64: ami-0fe05354c2b605fe4
+    us-west-2:
+      HVM64: ami-084f81625fbc98fa4
+
+Parameters:
+  EnvironmentName:
+    Description: An environment name that is prefixed to resource names
+    Type: String
+    Default: ATC-EDGE-LAB-DEMO
+
+  KeyName:
+    Description: Please select a EC2 key name
+    Type: AWS::EC2::KeyPair::KeyName
+    ConstraintDescription: Must be a valid EC2 instance key pair.
+
+  ATCVPC:
+    Description: VPC ID from nested stack vpc
+    Type: String
+
+  WLPublicSubnet1:
+    Description: WLPublic Subnet Id from nested stack vpc
+    Type: String
+
+  DefaultInstanceSizeIntheWLZ:
+    Description: EC2 type of the instances in the Wavelength Zone
+    Type: String
+    Default: "g4dn.2xlarge"
+    AllowedValues: ['t3.medium', 't3.xlarge', 'r5.2xlarge', 'g4dn.2xlarge']
+    ConstraintDescription: Must be a valid EC2 instance type, approved for use in the Wavelength Zone.
+
+
+# EC2
+Resources:
+  WLATCPublicEC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !FindInMap [MLAmiRegionMap, !Ref "AWS::Region", HVM64]
+      KeyName: !Ref KeyName
+      InstanceType: !Ref DefaultInstanceSizeIntheWLZ
+      SubnetId: !Ref WLPublicSubnet1
+      SecurityGroupIds:
+        - !Ref ATCMLSecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-WLZ-PubSN-Inst-01
+        - Key: Description
+          Value: !Sub ${EnvironmentName} ML Inferencing Instance in the Wavelength Zone
+
+  # Security Groups
+  ATCMLSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Sub ${EnvironmentName} SG for the ML Instance
+      GroupName: !Sub ${EnvironmentName}-ACS-WL-SG-MLInference
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName} SG for the ML Inferencing instance
+      SecurityGroupIngress:
+        - IpProtocol: "-1"
+          CidrIp: 0.0.0.0/0
+          Description: Enable installing dependencies from git clone, etc
+      VpcId: !Ref ATCVPC
+
+Outputs:
+  ATCMLSecurityGroupId:
+    Description: A reference to the ATCMLSecurityGroup Id
+    Value: !Ref ATCMLSecurityGroup
+

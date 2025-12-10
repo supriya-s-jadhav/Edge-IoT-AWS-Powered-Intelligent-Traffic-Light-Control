@@ -1,0 +1,32 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description:
+  AWS CloudFormation template to modify rules to the security groups
+
+# Rules for the SG
+## Self-referential rules
+
+Parameters:
+  ATCBastSecurityGroupId:
+    Description: ATCBastSecurityGroup ID from nested stack ec2
+    Type: String
+
+  ATCMLSecurityGroupId:
+    Description: ATCMLSecurityGroup ID from nested stack wz ec2
+    Type: String
+
+Resources:
+  ATCBastSGSelfReferentialIngressRule:
+    Type: "AWS::EC2::SecurityGroupIngress"
+    Properties:
+      IpProtocol: "-1"
+      SourceSecurityGroupId: !Ref ATCBastSecurityGroupId
+      GroupId: !Ref ATCBastSecurityGroupId
+
+  ATCMLSGIngressRule:
+    Type: "AWS::EC2::SecurityGroupIngress"
+    Properties:
+      IpProtocol: "-1"
+      SourceSecurityGroupId: !Ref ATCBastSecurityGroupId
+      GroupId: !Ref ATCMLSecurityGroupId
+
