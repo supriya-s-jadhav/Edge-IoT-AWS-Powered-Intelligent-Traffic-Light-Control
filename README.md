@@ -13,6 +13,20 @@ Date: Feb 2022
 
 Built an edge-based IoT traffic light control solution integrated with AWS cloud analytics, enabling real-time vehicle detection, dynamic signal adjustments, and data-driven traffic optimization.
 
+### Step by step guide to set up the ATC Edge Lab Model 1 implementation:
+
+1. Raspberry Pi : Set up IoT devices to generate dummy traffic light data 
+2. AWS IoT Greengrass: Configure IoT devices with AWS cloud using Greengrass group and core devices
+3. Lambda function 01 : Collect data from AWS Greengrass group and send it to DynamoDB
+4. DynamoDB: CarStats data (Key-Value) (Low latency, fully-managed)
+5. Glue Crawler: (Streaming data) Define crawler to periodically refresh data from source and move to S3.
+6. Glue job: ETL from DynamoDB (key-value format) to S3 bucket(csv format)
+7. S3: (Actionable data)IoT data in csv formation 
+    a. QuickSight: Dashboard and analytics
+    b. Sagemaker : Train model using actionable data 
+8. S3: Store trained model
+9. Lambda 02: Use trained model in S3 for ML inference on edge devices i.e. AWS function IoT Greengrass (Prediction on live data in real world)
+
 
 ### Step by step guide to set up the Edge Lab Model 2 Demo
 
