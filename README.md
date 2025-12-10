@@ -119,8 +119,7 @@ A high level overview fo how cloudformation nested stack works to spin up the re
 
 Get started with setting up the Edge Lab Model 2:
 
-1. [Find the complete set-up documentation guide here](02_Edge_Lab_Model_2/README.md)
-
+1. Find the complete set-up documentation guide here
 ```
 # Model 2 Provisioning Guide
 
