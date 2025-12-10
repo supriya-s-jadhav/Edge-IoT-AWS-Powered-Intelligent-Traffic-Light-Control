@@ -21,9 +21,10 @@ Built an edge-based IoT traffic light control solution integrated with AWS cloud
 
 #### Part 1:
 
-- AWS CloudFormation template is used to deploy the resources to setup the edge demo lab model 2. 
-- AWS CloudFormation is infrastructure as code service that provides an easy way to provision collection of related AWS resources and their dependencies in the cloud. To start with, describe a CloudFormation template with desired resources and their dependencies. Launch and configure them together as a stack. 
+AWS CloudFormation template is used to deploy the resources to setup the edge demo lab model 2. <br><br>
+AWS CloudFormation is infrastructure as code service that provides an easy way to provision collection of related AWS resources and their dependencies in the cloud. To start with, describe a CloudFormation template with desired resources and their dependencies. Launch and configure them together as a stack. <br>
 
+Set-up instructions : 
 
     1. Describe/Pick a template (JSON or YAML) and define the requirements in your script
 
