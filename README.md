@@ -57,7 +57,7 @@ Set-up instructions :
 
 Refer to the Figure.1 below that describes AWS architecture diagram with all the resources and configurations explained above:
 
-![ATC Edge Demo Model 2](/Users/supriyasampatjadhav/Documents/2025/GitRepositories/Edge-IoT-AWS-Powered-Intelligent-Traffic-Light-Control/images/atc_edge_Demo_model2.jpg "ATC Edge Demo Model 2")
+![ATC Edge Demo Model 2](Edge-IoT-AWS-Powered-Intelligent-Traffic-Light-Control/images/atc_edge_Demo_model2.jpg "ATC Edge Demo Model 2")
 
 Figure.1: ATC Edge Demo Model 2
 
