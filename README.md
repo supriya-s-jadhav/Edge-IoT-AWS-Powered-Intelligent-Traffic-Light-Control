@@ -27,7 +27,7 @@ Built an edge-based IoT traffic light control solution integrated with AWS cloud
 
     1. Describe/Pick a template (JSON or YAML) and define the requirements in your script
 
-    We used “EdgeLab - Single VPC, 1 EC2, 1 WL EC2 - ML.yaml” template that deployed following resources in AWS cloud environment:
+        We used “EdgeLab - Single VPC, 1 EC2, 1 WL EC2 - ML.yaml” template that deployed following resources in AWS cloud environment:
 
     a)	VPC in N. Virginia Region
     b)	One Availability Zone: “us-east-1a” and the resources deployed in them are as follows: 
